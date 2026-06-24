@@ -1,0 +1,82 @@
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateBranchDto, UpdateBranchDto } from './dto/branch.dto';
+export declare class BranchesService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    findAll(tenantId: string, activeOnly?: boolean): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: Prisma.JsonValue;
+        code: string;
+        city: string | null;
+    }[]>;
+    findOne(id: string, tenantId: string): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: Prisma.JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+    create(tenantId: string, dto: CreateBranchDto): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: Prisma.JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+    update(id: string, tenantId: string, dto: UpdateBranchDto): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: Prisma.JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+    deactivate(id: string, tenantId: string): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: Prisma.JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+}

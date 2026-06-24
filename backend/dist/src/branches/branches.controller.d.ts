@@ -1,0 +1,81 @@
+import { BranchesService } from './branches.service';
+import { CreateBranchDto, UpdateBranchDto } from './dto/branch.dto';
+export declare class BranchesController {
+    private branchesService;
+    constructor(branchesService: BranchesService);
+    findAll(tenantId: string, activeOnly?: boolean): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue;
+        code: string;
+        city: string | null;
+    }[]>;
+    findOne(id: string, tenantId: string): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+    create(tenantId: string, dto: CreateBranchDto): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+    update(id: string, tenantId: string, dto: UpdateBranchDto): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+    deactivate(id: string, tenantId: string): Promise<{
+        email: string | null;
+        tenantId: string;
+        id: string;
+        phone: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        nameAr: string | null;
+        address: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue;
+        code: string;
+        city: string | null;
+    }>;
+}

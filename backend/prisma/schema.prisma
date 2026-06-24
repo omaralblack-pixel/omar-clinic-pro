@@ -1,0 +1,1089 @@
+// OMAR CLINIC PRO — Production Database Schema
+// Multi-tenant SaaS · PostgreSQL · Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════
+
+enum UserRole {
+  SUPER_ADMIN
+  BRANCH_MANAGER
+  RECEPTIONIST
+  DOCTOR
+  LASER_SPECIALIST
+  ACCOUNTANT
+  MARKETING_OFFICER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum SkinType {
+  TYPE_I
+  TYPE_II
+  TYPE_III
+  TYPE_IV
+  TYPE_V
+  TYPE_VI
+}
+
+enum PregnancyStatus {
+  NOT_APPLICABLE
+  NOT_PREGNANT
+  PREGNANT
+  BREASTFEEDING
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentMethod {
+  CASH
+  VISA
+  MASTERCARD
+  BANK_TRANSFER
+  CLIQ
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+  CANCELLED
+}
+
+enum InvoiceItemType {
+  TREATMENT
+  PACKAGE
+  PRODUCT
+}
+
+enum StockMovementType {
+  STOCK_IN
+  STOCK_OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+}
+
+enum LeadSource {
+  FACEBOOK
+  INSTAGRAM
+  WHATSAPP
+  WEBSITE
+  REFERRAL
+  WALK_IN
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum DocumentType {
+  DOCUMENT
+  CONSENT_FORM
+  BEFORE_PHOTO
+  AFTER_PHOTO
+  OTHER
+}
+
+enum TimelineEventType {
+  VISIT
+  SESSION
+  PAYMENT
+  NOTE
+  APPOINTMENT
+  PACKAGE
+}
+
+enum ReminderChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum WhatsAppMessageType {
+  APPOINTMENT_REMINDER
+  PAYMENT_REMINDER
+  PROMOTIONAL
+  CUSTOM
+}
+
+enum LaserAreaPreset {
+  FACE
+  FULL_BODY
+  BIKINI
+  UNDERARMS
+  LEGS
+  ARMS
+  CUSTOM
+}
+
+enum CashboxTransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum OtpPurpose {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  TWO_FACTOR
+  LOGIN
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLATFORM & MULTI-TENANCY
+// ═══════════════════════════════════════════════════════════════
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  nameAr    String?  @map("name_ar")
+  slug      String   @unique
+  logo      String?
+  email     String
+  phone     String?
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branches      Branch[]
+  users         User[]
+  subscriptions Subscription[]
+  patients      Patient[]
+  products      Product[]
+  leads         Lead[]
+  campaigns     Campaign[]
+  servicePackages ServicePackage[]
+  auditLogs     AuditLog[]
+
+  @@map("tenants")
+}
+
+model SubscriptionPlan {
+  id           String   @id @default(cuid())
+  name         String
+  nameAr       String?  @map("name_ar")
+  description  String?
+  price        Decimal  @db.Decimal(10, 2)
+  currency     String   @default("JOD")
+  maxBranches  Int      @default(1) @map("max_branches")
+  maxUsers     Int      @default(5) @map("max_users")
+  features     Json     @default("[]")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  tenantId  String             @map("tenant_id")
+  planId    String             @map("plan_id")
+  status    SubscriptionStatus @default(TRIAL)
+  startDate DateTime           @map("start_date")
+  endDate   DateTime?          @map("end_date")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  nameAr    String?  @map("name_ar")
+  code      String
+  phone     String?
+  email     String?
+  address   String?
+  city      String?
+  isActive  Boolean  @default(true) @map("is_active")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users             User[]
+  patients          Patient[]
+  appointments      Appointment[]
+  laserSessions     LaserSession[]
+  invoices          Invoice[]
+  products          Product[]
+  stockMovements    StockMovement[]
+  inventoryTransfers InventoryTransfer[]
+  employees         Employee[]
+  attendanceRecords AttendanceRecord[]
+  cashboxes         Cashbox[]
+  incomeRecords     IncomeRecord[]
+  expenseRecords    ExpenseRecord[]
+  leads             Lead[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("branches")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH & RBAC
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+  id              String    @id @default(cuid())
+  tenantId        String?   @map("tenant_id")
+  branchId        String?   @map("branch_id")
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  firstName       String    @map("first_name")
+  lastName        String    @map("last_name")
+  firstNameAr     String?   @map("first_name_ar")
+  lastNameAr      String?   @map("last_name_ar")
+  phone           String?
+  avatar          String?
+  role            UserRole  @default(RECEPTIONIST)
+  isActive        Boolean   @default(true) @map("is_active")
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  twoFactorEnabled Boolean  @default(false) @map("two_factor_enabled")
+  twoFactorSecret String?   @map("two_factor_secret")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch?         @relation(fields: [branchId], references: [id])
+  sessions       Session[]
+  refreshTokens  RefreshToken[]
+  otpTokens      OtpToken[]
+  userPermissions UserPermission[]
+  auditLogs      AuditLog[]      @relation("AuditUser")
+  appointments   Appointment[]   @relation("DoctorAppointments")
+  laserSessions  LaserSession[]  @relation("LaserSpecialist")
+  patientNotes   PatientTimelineEvent[]
+  employees      Employee?
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([role])
+  @@map("users")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  nameAr      String?  @map("name_ar")
+  module      String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  userPermissions UserPermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  permissionId String   @map("permission_id")
+  granted      Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  token      String   @unique
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model OtpToken {
+  id        String     @id @default(cuid())
+  userId    String     @map("user_id")
+  code      String
+  purpose   OtpPurpose
+  expiresAt DateTime   @map("expires_at")
+  usedAt    DateTime?  @map("used_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@map("otp_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?  @map("tenant_id")
+  userId     String?  @map("user_id")
+  action     String
+  entity     String
+  entityId   String?  @map("entity_id")
+  metadata   Json     @default("{}")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  user   User?   @relation("AuditUser", fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PATIENTS
+// ═══════════════════════════════════════════════════════════════
+
+model Patient {
+  id               String   @id @default(cuid())
+  tenantId         String   @map("tenant_id")
+  branchId         String   @map("branch_id")
+  patientNumber    String   @map("patient_number")
+  firstName        String   @map("first_name")
+  lastName         String   @map("last_name")
+  firstNameAr      String?  @map("first_name_ar")
+  lastNameAr       String?  @map("last_name_ar")
+  gender           Gender
+  birthDate        DateTime? @map("birth_date")
+  nationalId       String?  @map("national_id")
+  phone            String
+  whatsapp         String?
+  email            String?
+  address          String?
+  emergencyName    String?  @map("emergency_name")
+  emergencyPhone   String?  @map("emergency_phone")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch                @relation(fields: [branchId], references: [id])
+  medicalInfo     PatientMedicalInfo?
+  documents       PatientDocument[]
+  timelineEvents  PatientTimelineEvent[]
+  appointments    Appointment[]
+  laserSessions   LaserSession[]
+  patientPackages PatientPackage[]
+  invoices        Invoice[]
+  leads           Lead[]
+
+  @@unique([tenantId, patientNumber])
+  @@index([tenantId, branchId])
+  @@index([phone])
+  @@index([nationalId])
+  @@map("patients")
+}
+
+model PatientMedicalInfo {
+  id              String          @id @default(cuid())
+  patientId       String          @unique @map("patient_id")
+  allergies       String?
+  diseases        String?
+  medications     String?
+  pregnancyStatus PregnancyStatus @default(NOT_APPLICABLE) @map("pregnancy_status")
+  skinType        SkinType?       @map("skin_type")
+  medicalNotes    String?         @map("medical_notes")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_medical_info")
+}
+
+model PatientDocument {
+  id         String       @id @default(cuid())
+  patientId  String       @map("patient_id")
+  type       DocumentType
+  title      String
+  fileUrl    String       @map("file_url")
+  fileName   String       @map("file_name")
+  mimeType   String?      @map("mime_type")
+  fileSize   Int?         @map("file_size")
+  notes      String?
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, type])
+  @@map("patient_documents")
+}
+
+model PatientTimelineEvent {
+  id          String            @id @default(cuid())
+  patientId   String            @map("patient_id")
+  type        TimelineEventType
+  title       String
+  description String?
+  metadata    Json              @default("{}")
+  createdById String?           @map("created_by_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation(fields: [createdById], references: [id])
+
+  @@index([patientId, createdAt])
+  @@map("patient_timeline_events")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// APPOINTMENTS
+// ═══════════════════════════════════════════════════════════════
+
+model Appointment {
+  id          String            @id @default(cuid())
+  tenantId    String            @map("tenant_id")
+  branchId    String            @map("branch_id")
+  patientId   String            @map("patient_id")
+  doctorId    String?           @map("doctor_id")
+  title       String
+  description String?
+  scheduledAt DateTime          @map("scheduled_at")
+  duration    Int               @default(30)
+  status      AppointmentStatus @default(SCHEDULED)
+  notes       String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  branch    Branch                @relation(fields: [branchId], references: [id])
+  patient   Patient               @relation(fields: [patientId], references: [id])
+  doctor    User?                 @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  reminders AppointmentReminder[]
+
+  @@index([branchId, scheduledAt])
+  @@index([patientId])
+  @@index([status, scheduledAt])
+  @@map("appointments")
+}
+
+model AppointmentReminder {
+  id            String          @id @default(cuid())
+  appointmentId String          @map("appointment_id")
+  channel       ReminderChannel
+  scheduledAt   DateTime        @map("scheduled_at")
+  status        ReminderStatus  @default(PENDING)
+  sentAt        DateTime?       @map("sent_at")
+  errorMessage  String?         @map("error_message")
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@index([status, scheduledAt])
+  @@map("appointment_reminders")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LASER MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+model LaserArea {
+  id        String          @id @default(cuid())
+  tenantId  String          @map("tenant_id")
+  name      String
+  nameAr    String?         @map("name_ar")
+  preset    LaserAreaPreset @default(CUSTOM)
+  isActive  Boolean         @default(true) @map("is_active")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  sessions LaserSession[]
+
+  @@index([tenantId])
+  @@map("laser_areas")
+}
+
+model LaserSession {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  branchId      String   @map("branch_id")
+  patientId     String   @map("patient_id")
+  specialistId  String?  @map("specialist_id")
+  areaId        String   @map("area_id")
+  sessionNumber Int      @map("session_number")
+  sessionDate   DateTime @map("session_date")
+  device        String?
+  energyLevel   String?  @map("energy_level")
+  pulseWidth    String?  @map("pulse_width")
+  parameters    Json     @default("{}")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  branch     Branch              @relation(fields: [branchId], references: [id])
+  patient    Patient             @relation(fields: [patientId], references: [id])
+  specialist User?               @relation("LaserSpecialist", fields: [specialistId], references: [id])
+  area       LaserArea           @relation(fields: [areaId], references: [id])
+  photos     LaserSessionPhoto[]
+
+  @@index([patientId, sessionDate])
+  @@index([branchId, sessionDate])
+  @@map("laser_sessions")
+}
+
+model LaserSessionPhoto {
+  id        String       @id @default(cuid())
+  sessionId String       @map("session_id")
+  type      DocumentType
+  fileUrl   String       @map("file_url")
+  fileName  String       @map("file_name")
+  notes     String?
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  session LaserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("laser_session_photos")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PACKAGES
+// ═══════════════════════════════════════════════════════════════
+
+model ServicePackage {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  name         String
+  nameAr       String?  @map("name_ar")
+  description  String?
+  totalSessions Int     @map("total_sessions")
+  price        Decimal  @db.Decimal(10, 2)
+  validityDays Int      @default(365) @map("validity_days")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patientPackages PatientPackage[]
+
+  @@index([tenantId])
+  @@map("service_packages")
+}
+
+model PatientPackage {
+  id              String   @id @default(cuid())
+  patientId       String   @map("patient_id")
+  packageId       String   @map("package_id")
+  totalSessions   Int      @map("total_sessions")
+  usedSessions    Int      @default(0) @map("used_sessions")
+  remainingSessions Int    @map("remaining_sessions")
+  purchaseDate    DateTime @default(now()) @map("purchase_date")
+  expirationDate  DateTime @map("expiration_date")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  patient Patient        @relation(fields: [patientId], references: [id])
+  package ServicePackage @relation(fields: [packageId], references: [id])
+
+  @@index([patientId])
+  @@index([expirationDate])
+  @@map("patient_packages")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SALES & INVOICES
+// ═══════════════════════════════════════════════════════════════
+
+model Invoice {
+  id            String        @id @default(cuid())
+  tenantId      String        @map("tenant_id")
+  branchId      String        @map("branch_id")
+  patientId     String        @map("patient_id")
+  invoiceNumber String        @map("invoice_number")
+  status        InvoiceStatus @default(PENDING)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  tax           Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  notes         String?
+  issuedAt      DateTime      @default(now()) @map("issued_at")
+  dueDate       DateTime?     @map("due_date")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  branch   Branch        @relation(fields: [branchId], references: [id])
+  patient  Patient       @relation(fields: [patientId], references: [id])
+  items    InvoiceItem[]
+  payments Payment[]
+  refunds  Refund[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([branchId, issuedAt])
+  @@index([patientId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String          @id @default(cuid())
+  invoiceId   String          @map("invoice_id")
+  type        InvoiceItemType
+  description String
+  quantity    Int             @default(1)
+  unitPrice   Decimal         @map("unit_price") @db.Decimal(10, 2)
+  total       Decimal         @db.Decimal(10, 2)
+  referenceId String?         @map("reference_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String        @map("invoice_id")
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+  reference String?
+  notes     String?
+  paidAt    DateTime      @default(now()) @map("paid_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id])
+  refunds Refund[]
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+model Refund {
+  id        String   @id @default(cuid())
+  invoiceId String   @map("invoice_id")
+  paymentId String?  @map("payment_id")
+  amount    Decimal  @db.Decimal(10, 2)
+  reason    String?
+  refundedAt DateTime @default(now()) @map("refunded_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([invoiceId])
+  @@map("refunds")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACCOUNTING
+// ═══════════════════════════════════════════════════════════════
+
+model Cashbox {
+  id        String   @id @default(cuid())
+  branchId  String   @map("branch_id")
+  name      String
+  balance   Decimal  @default(0) @db.Decimal(10, 2)
+  currency  String   @default("JOD")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branch       Branch               @relation(fields: [branchId], references: [id])
+  transactions CashboxTransaction[]
+
+  @@index([branchId])
+  @@map("cashboxes")
+}
+
+model CashboxTransaction {
+  id          String                 @id @default(cuid())
+  cashboxId   String                 @map("cashbox_id")
+  type        CashboxTransactionType
+  amount      Decimal                @db.Decimal(10, 2)
+  description String
+  reference   String?
+  createdAt   DateTime               @default(now()) @map("created_at")
+
+  cashbox Cashbox @relation(fields: [cashboxId], references: [id])
+
+  @@index([cashboxId, createdAt])
+  @@map("cashbox_transactions")
+}
+
+model IncomeRecord {
+  id          String   @id @default(cuid())
+  branchId    String   @map("branch_id")
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  reference   String?
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([branchId, recordedAt])
+  @@map("income_records")
+}
+
+model ExpenseRecord {
+  id          String   @id @default(cuid())
+  branchId    String   @map("branch_id")
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  reference   String?
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([branchId, recordedAt])
+  @@map("expense_records")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INVENTORY
+// ═══════════════════════════════════════════════════════════════
+
+model Supplier {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@index([tenantId])
+  @@map("suppliers")
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  branchId      String    @map("branch_id")
+  supplierId    String?   @map("supplier_id")
+  sku           String
+  name          String
+  nameAr        String?   @map("name_ar")
+  category      String
+  unit          String    @default("piece")
+  quantity      Int       @default(0)
+  minStock      Int       @default(5) @map("min_stock")
+  costPrice     Decimal   @map("cost_price") @db.Decimal(10, 2)
+  sellingPrice  Decimal   @map("selling_price") @db.Decimal(10, 2)
+  expiryDate    DateTime? @map("expiry_date")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch          @relation(fields: [branchId], references: [id])
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id])
+  stockMovements StockMovement[]
+
+  @@unique([tenantId, sku])
+  @@index([branchId])
+  @@index([quantity])
+  @@map("products")
+}
+
+model StockMovement {
+  id        String            @id @default(cuid())
+  productId String            @map("product_id")
+  branchId  String            @map("branch_id")
+  type      StockMovementType
+  quantity  Int
+  notes     String?
+  reference String?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id])
+  branch  Branch  @relation(fields: [branchId], references: [id])
+
+  @@index([productId, createdAt])
+  @@index([branchId])
+  @@map("stock_movements")
+}
+
+model InventoryTransfer {
+  id              String   @id @default(cuid())
+  fromBranchId    String   @map("from_branch_id")
+  toBranchId      String   @map("to_branch_id")
+  productSku      String   @map("product_sku")
+  quantity        Int
+  status          String   @default("pending")
+  notes           String?
+  transferredAt   DateTime? @map("transferred_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  fromBranch Branch @relation(fields: [fromBranchId], references: [id])
+
+  @@index([fromBranchId])
+  @@map("inventory_transfers")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STAFF
+// ═══════════════════════════════════════════════════════════════
+
+model Employee {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  branchId   String   @map("branch_id")
+  employeeNo String   @map("employee_no")
+  department String?
+  jobTitle   String?  @map("job_title")
+  salary     Decimal? @db.Decimal(10, 2)
+  hireDate   DateTime @map("hire_date")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user              User               @relation(fields: [userId], references: [id])
+  branch            Branch             @relation(fields: [branchId], references: [id])
+  attendanceRecords AttendanceRecord[]
+  leaveRequests     LeaveRequest[]
+  payrollRecords    PayrollRecord[]
+
+  @@index([branchId])
+  @@map("employees")
+}
+
+model AttendanceRecord {
+  id         String           @id @default(cuid())
+  employeeId String           @map("employee_id")
+  branchId   String           @map("branch_id")
+  date       DateTime         @db.Date
+  checkIn    DateTime?        @map("check_in")
+  checkOut   DateTime?        @map("check_out")
+  status     AttendanceStatus @default(PRESENT)
+  notes      String?
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([branchId, date])
+  @@map("attendance_records")
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  employeeId String      @map("employee_id")
+  startDate  DateTime    @map("start_date")
+  endDate    DateTime    @map("end_date")
+  reason     String
+  status     LeaveStatus @default(PENDING)
+  approvedAt DateTime?   @map("approved_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+  @@map("leave_requests")
+}
+
+model PayrollRecord {
+  id         String   @id @default(cuid())
+  employeeId String   @map("employee_id")
+  month      Int
+  year       Int
+  baseSalary Decimal  @map("base_salary") @db.Decimal(10, 2)
+  bonuses    Decimal  @default(0) @db.Decimal(10, 2)
+  deductions Decimal  @default(0) @db.Decimal(10, 2)
+  netSalary  Decimal  @map("net_salary") @db.Decimal(10, 2)
+  paidAt     DateTime? @map("paid_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, month, year])
+  @@map("payroll_records")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MARKETING CRM
+// ═══════════════════════════════════════════════════════════════
+
+model Lead {
+  id         String     @id @default(cuid())
+  tenantId   String     @map("tenant_id")
+  branchId   String?    @map("branch_id")
+  patientId  String?    @map("patient_id")
+  campaignId String?    @map("campaign_id")
+  name       String
+  phone      String
+  email      String?
+  source     LeadSource
+  status     LeadStatus @default(NEW)
+  notes      String?
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch    Branch?    @relation(fields: [branchId], references: [id])
+  patient   Patient?   @relation(fields: [patientId], references: [id])
+  campaign  Campaign?  @relation(fields: [campaignId], references: [id])
+  followUps FollowUp[]
+
+  @@index([tenantId, status])
+  @@index([source])
+  @@map("leads")
+}
+
+model Campaign {
+  id        String         @id @default(cuid())
+  tenantId  String         @map("tenant_id")
+  name      String
+  nameAr    String?        @map("name_ar")
+  platform  LeadSource
+  budget    Decimal?       @db.Decimal(10, 2)
+  status    CampaignStatus @default(DRAFT)
+  startDate DateTime?      @map("start_date")
+  endDate   DateTime?      @map("end_date")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leads  Lead[]
+
+  @@index([tenantId])
+  @@map("campaigns")
+}
+
+model FollowUp {
+  id          String    @id @default(cuid())
+  leadId      String    @map("lead_id")
+  notes       String
+  scheduledAt DateTime? @map("scheduled_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@map("follow_ups")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WHATSAPP
+// ═══════════════════════════════════════════════════════════════
+
+model WhatsAppMessage {
+  id        String              @id @default(cuid())
+  tenantId  String              @map("tenant_id")
+  phone     String
+  type      WhatsAppMessageType
+  message   String
+  status    ReminderStatus      @default(PENDING)
+  sentAt    DateTime?           @map("sent_at")
+  metadata  Json                @default("{}")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  @@index([tenantId, status])
+  @@map("whatsapp_messages")
+}

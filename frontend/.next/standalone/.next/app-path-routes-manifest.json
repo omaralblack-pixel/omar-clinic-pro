@@ -1,0 +1,23 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/(auth)/forgot-password/page": "/forgot-password",
+  "/(auth)/login/page": "/login",
+  "/(auth)/verify-otp/page": "/verify-otp",
+  "/page": "/",
+  "/(dashboard)/accounting/page": "/accounting",
+  "/(dashboard)/admin/page": "/admin",
+  "/(dashboard)/appointments/page": "/appointments",
+  "/(dashboard)/branches/page": "/branches",
+  "/(dashboard)/dashboard/page": "/dashboard",
+  "/(dashboard)/inventory/page": "/inventory",
+  "/(dashboard)/laser/page": "/laser",
+  "/(dashboard)/marketing/page": "/marketing",
+  "/(dashboard)/packages/page": "/packages",
+  "/(dashboard)/patients/[id]/page": "/patients/[id]",
+  "/(dashboard)/patients/new/page": "/patients/new",
+  "/(dashboard)/patients/page": "/patients",
+  "/(dashboard)/reports/page": "/reports",
+  "/(dashboard)/sales/page": "/sales",
+  "/(dashboard)/settings/page": "/settings",
+  "/(dashboard)/staff/page": "/staff"
+}

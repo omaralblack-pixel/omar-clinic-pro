@@ -1,0 +1,23 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/forgot-password/page": "app/(auth)/forgot-password/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/verify-otp/page": "app/(auth)/verify-otp/page.js",
+  "/page": "app/page.js",
+  "/(dashboard)/accounting/page": "app/(dashboard)/accounting/page.js",
+  "/(dashboard)/admin/page": "app/(dashboard)/admin/page.js",
+  "/(dashboard)/appointments/page": "app/(dashboard)/appointments/page.js",
+  "/(dashboard)/branches/page": "app/(dashboard)/branches/page.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(dashboard)/inventory/page": "app/(dashboard)/inventory/page.js",
+  "/(dashboard)/laser/page": "app/(dashboard)/laser/page.js",
+  "/(dashboard)/marketing/page": "app/(dashboard)/marketing/page.js",
+  "/(dashboard)/packages/page": "app/(dashboard)/packages/page.js",
+  "/(dashboard)/patients/[id]/page": "app/(dashboard)/patients/[id]/page.js",
+  "/(dashboard)/patients/new/page": "app/(dashboard)/patients/new/page.js",
+  "/(dashboard)/patients/page": "app/(dashboard)/patients/page.js",
+  "/(dashboard)/reports/page": "app/(dashboard)/reports/page.js",
+  "/(dashboard)/sales/page": "app/(dashboard)/sales/page.js",
+  "/(dashboard)/settings/page": "app/(dashboard)/settings/page.js",
+  "/(dashboard)/staff/page": "app/(dashboard)/staff/page.js"
+}
