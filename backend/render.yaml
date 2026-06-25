@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: omar-clinic-pro-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: API_PREFIX
+        value: api/v1
+      - key: DATABASE_URL
+        value: postgresql://postgres:OMAR%40omar2026@db.xaaydwxmpfvzawsfgayq.supabase.co:5432/postgres
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://omar-clinic-pro-frontend.vercel.app
+      - key: SUPABASE_URL
+        value: https://xaaydwxmpfvzawsfgayq.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhYXlkd3htcGZ2emF3c2ZnYXlxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI4OTkwMSwiZXhwIjoyMDk3ODY1OTAxfQ.qR-BO8Nm9GCwXQKVDeRmzSTB0cORoC7vGR-Re1vc1dM
