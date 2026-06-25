@@ -2,8 +2,8 @@ services:
   - type: web
     name: omar-clinic-pro-backend
     env: node
-    buildCommand: cd backend buildCommand: npm install && npm run buildbuildCommand: npm install && npm run build npm install buildCommand: npm install && npm run buildbuildCommand: npm install && npm run build npm run build
-    startCommand: cd backend startCommand: npm run start:prodstartCommand: npm run start:prod npm run start:prod
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
