@@ -1,4 +1,4 @@
-// File: C:\Users\dell\OneDrive - AL Kaylani Food Center\سطح المكتب\123\omar-clinic-pro\frontend\src\app\(auth)\forgot-password\page.tsx
+// File: /home/ubuntu/omar-clinic-pro/frontend/src/app/(auth)/forgot-password/page.tsx
 import * as entry from '../../../../../src/app/(auth)/forgot-password/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
